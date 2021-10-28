@@ -1,0 +1,7 @@
+eae_env
+eae/__pycache__
+stock/__pycache__
+stock/migrations
+stock/templatetags/__pycache__
+exchange/__pycache__
+exchange/migrations

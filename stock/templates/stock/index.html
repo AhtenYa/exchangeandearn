@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% load stock_extras %}
+
+{% block stylelink %}
+
+{% load static %}
+<script src="{% static 'stock/js/chart.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="mx-auto py-5 col-md-6">
+  <div class="modal-content">
+    <form class="mx-auto my-5 py-5" action="{% url 'stock:index' %}" method="post">
+      <div class="modal-body">
+        {% csrf_token %}
+        {{ form_exchange }}
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Exchange</button>
+      </div>
+    </form>
+
+    {{ ask_amount }} {{ cur_ask }} = {{ bid_amount }} {{ cur_bid }}
+  </div>
+</div>
+{% endblock %}
