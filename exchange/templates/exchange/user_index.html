@@ -1,5 +1,13 @@
 {% extends "base.html" %}
 
+{% load stock_extras %}
+
 {% block content %}
-Hello {{ user.username }} !
+<div class="mx-auto py-5 col-md-6">
+  <div class="modal-content">
+    <div class="modal-body">
+        <h4>{{ account_info|from_dict:"balance" }} {{ account_info|from_dict:"currency" }} {{ account_info|from_dict:"status" }}</h4>
+    </div>
+  </div>
+</div>
 {% endblock %}
