@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if user.is_authenticated %}
+
+	{% if messages %}
+		<ul class="messages">
+			{% for message in messages %}
+			<li>{{ message }}</li>
+			{% endfor %}
+		</ul>
+	{% endif %}
+	<div class="col-md-10 mx-auto">
+	<div class="modal-content my-5">
+	<div class="table-responsive">
+		<table class="table table-borderless text-start">
+			<thead>
+			<tr>
+				<th scope="col">Account information : </th>
+			</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Username : </td>
+					<td>{{ user.username }}</td>
+				</tr>
+				<tr>
+					<td>Password : </td>
+					<td>
+						<a class="text-decoration-none" href="{% url 'exchange:user_password' %}">
+							change
+						</a>
+					</td>
+				</tr>
+				<tr>
+					<td>Date joined : </td>
+					<td>{{ user.date_joined }}</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	</div>
+	</div>
+
+	<a class="text-decoration-none" href="{% url 'exchange:user_delete' user.username %}">
+		Delete Account
+	</a>
+{% endif %}
+{% endblock %}

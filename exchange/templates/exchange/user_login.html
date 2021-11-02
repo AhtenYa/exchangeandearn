@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<form class="col-md-4 mx-auto my-5 py-5" action="{% url 'exchange:user_login' %}" method="post">
+	{% csrf_token %}
+	{{ form }}
+
+	<input class="my-2 fs-5 form-control border border-primary border-3 rounded-3 btn btn-primary" type="submit" value="Log in"/>
+	<input type="hidden" name="next" value="{% url 'exchange:user_index' %}"/>
+
+</form>
+
+{% endblock %}

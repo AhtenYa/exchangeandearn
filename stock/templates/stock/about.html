@@ -17,84 +17,81 @@
         Display data from date range:
       </button>
 
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form class="col-md-12 mx-auto my-5 py-5" action="{% url 'stock:about' %}" method="post">
-        <div class="modal-body">
-          {% csrf_token %}
-      	   {{ form_calendar }}
+      <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form class="col-md-12 mx-auto my-5 py-5" action="{% url 'stock:about' %}" method="post">
+              <div class="modal-body">
+                {% csrf_token %}
+      	         {{ form_calendar }}
+               </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Apply</button>
+              </div>
+            </form>
+          </div>
         </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Apply</button>
       </div>
-      </form>
     </div>
-  </div>
-</div>
 
-</div>
-  <div id="carouselExampleDark" class="carousel carousel-dark slide" data-bs-ride="carousel">
-    <div class="carousel-indicators">
-      {% for currency in stock %}
-      {% if stock|from_dictionary_get_currency_index_minus_one:currency == 0 %}
-      <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="{{ stock|from_dictionary_get_currency_index_minus_one:currency }}" class="active" aria-current="true" aria-label="Slide {{ stock|from_dictionary_get_currency_index_minus_one:currency }}"></button>
-      {% else %}
-      <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="{{ stock|from_dictionary_get_currency_index_minus_one:currency }}" aria-label="Slide {{ stock|from_dictionary_get_currency_index_minus_one:currency }}"></button>
-      {% endif %}
-      {% endfor %}
-    </div>
-  <div class="carousel-inner">
-    {% for currency in stock %}
-    {% if stock|from_dictionary_get_currency_index_minus_one:currency == 0 %}
-    <div class="carousel-item active" data-bs-interval="1000">
-    {% else %}
-    <div class="carousel-item">
-    {% endif %}
+    <div id="carouselExampleDark" class="carousel carousel-dark slide" data-bs-ride="carousel">
+      <div class="carousel-indicators">
+        {% for currency in stock %}
+        {% if stock|from_dict_imo:currency == 0 %}
+        <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="{{ stock|from_dict_imo:currency }}" class="active" aria-current="true" aria-label="Slide {{ stock|from_dict_imo:currency }}"></button>
+        {% else %}
+        <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="{{ stock|from_dict_imo:currency }}" aria-label="Slide {{ stock|from_dict_imo:currency }}"></button>
+        {% endif %}
+        {% endfor %}
+      </div>
 
-      <div class="p-5 modal-body">
-        <canvas id="{{ currency }}" width="800" height="600"></canvas>
-        <script>
-          var ctx = document.getElementById("{{ currency }}").getContext('2d');
-          var {{ currency }} = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: [{% for date in stock|from_dictionary:currency %}'{{ date.effective_date|date_from_datetime }}',{% endfor %}],
-              datasets: [{
-                label: '{{ currency }}',
-                data: [{% for value in stock|from_dictionary:currency %}{{ value.value_mid }},{% endfor %}],
-                backgroundColor: 'rgba(0, 81, 255, 0.2)',
-                borderColor: 'rgba(0, 81, 255, 1)',
-                borderWidth: 1,
-              }]
-            },
-            options: {
-              scales: {
-                yAxes: [{
-                  ticks: {
-                    beginAtZero: true
+      <div class="carousel-inner">
+        {% for currency in stock %}
+        {% if stock|from_dict_imo:currency == 0 %}
+        <div class="carousel-item active" data-bs-interval="1000">
+        {% else %}
+          <div class="carousel-item">
+        {% endif %}
+
+            <div class="p-5 modal-body">
+              {% if not stock|from_dict:currency %}
+              <div class="alert alert-warning" role="alert">
+                We were unable to retrevie any data in this date range.
+              </div>
+              {% endif %}
+              <canvas id="{{ currency }}" width="800" height="600"></canvas>
+
+              <script>
+                var ctx = document.getElementById("{{ currency }}").getContext('2d');
+                var {{ currency }} = new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels: [{% for date in stock|from_dict:currency %}'{{ date.effective_date|date_from_datetime }}',{% endfor %}],
+                    datasets: [{
+                      label: '{{ currency }}',
+                      data: [{% for value in stock|from_dict:currency %}{{ value.value_mid }},{% endfor %}],
+                      backgroundColor: 'rgba(0, 81, 255, 0.2)',
+                      borderColor: 'rgba(0, 81, 255, 1)',
+                      borderWidth: 1,
+                    }]
+                  },
+                  options: {
+                    scales: {
+                      yAxes: [{
+                        ticks: {
+                          beginAtZero: true
+                        }
+                      }]
+                    }
                   }
-                }]
-              }
-            }
-          });
-      </script>
-
+                });
+              </script>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
-    </div>
-    {% endfor %}
-    </div>
-  <!--
-  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleDark" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Previous</span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleDark" data-bs-slide="next">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Next</span>
-  </button>
--->
     </div>
   </div>
 </div>

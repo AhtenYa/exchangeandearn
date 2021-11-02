@@ -27,6 +27,22 @@ class IndexView(DetailView):
         return render(request, 'exchange/index.html')
 
 
+class UserIndexView(DetailView):
+    template_name = 'exchange/user_index.html'
+
+    def get(self, request):
+        return render(request, 'exchange/user_index.html')
+
+
+@method_decorator(login_required, name='dispatch')
+class UserSettingsView(PermissionRequiredMixin, DetailView):
+    permission_required = 'auth.change_user'
+    template_name = 'exchange/user_settings.html'
+
+    def get(self, request):
+        return render(request, 'exchange/user_settings.html')
+
+
 class UserLoginView(LoginView):
     template_name = 'exchange/user_login.html'
     authentication_form = LoginForm
@@ -74,3 +90,9 @@ class UserRegisterView(CreateView):
         if not self.success_url:
             raise ImproperlyConfigured("No URL to redirect to. Provide a success_url.")
         return str(self.success_url)
+
+
+@login_required
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect(reverse_lazy('stock:index'))

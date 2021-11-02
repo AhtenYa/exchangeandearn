@@ -22,7 +22,11 @@
       </div>
     </form>
 
-    {{ ask_amount }} {{ cur_ask }} = {{ bid_amount }} {{ cur_bid }}
+    {% if request.method == 'POST'%}
+    <p>{{ ask_amount }} {{ cur_ask }} = {{ bid_amount }} {{ cur_bid }}</p>
+    <p>Date Ask: {{ date_ask }}</p>
+    <p>Date Bid: {{ date_bid }}</p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
