@@ -3,10 +3,10 @@
 {% load stock_extras %}
 
 {% block content %}
-<div class="mx-auto py-5 col-md-6">
+<div class="mx-auto py-5 col-md-3">
   <div class="modal-content">
     <div class="modal-body">
-        <h4>{{ account_info|from_dict:"balance" }} {{ account_info|from_dict:"currency" }} {{ account_info|from_dict:"status" }}</h4>
+        <h4>{{ account_info|from_dict:"balance" }} {{ account_info|from_dict:"currency" }}</h4>
     </div>
   </div>
 </div>

@@ -17,7 +17,7 @@ class DateFromToForm(forms.Form):
 
 
 class ExchangeForm(forms.Form):
-    currency_ask = forms.ModelChoiceField(queryset=Currency.objects.all().order_by('index'))
-    currency_bid = forms.ModelChoiceField(queryset=Currency.objects.all().order_by('index'))
+    currency_ask = forms.ModelChoiceField(queryset=Currency.objects.all().order_by('index'), empty_label=None)
+    currency_bid = forms.ModelChoiceField(queryset=Currency.objects.all().order_by('index'), empty_label=None)
     ask_amount = forms.DecimalField(label='', decimal_places=2,
         widget=forms.NumberInput(attrs={'name': 'ask_amount', 'placeholder': 'Enter Amount'}))

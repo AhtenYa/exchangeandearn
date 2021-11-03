@@ -112,7 +112,7 @@ class AboutView(DetailView):
         currencyStats, created = CurrencyStat.objects.get_or_create(currency=p_currency,
         effective_date=p_effective_date, value_mid=p_value_mid, value_bid=p_value_bid, value_ask=p_value_ask)
 
-    def get_data(self):
+    def get_data_from_net_to_db(self):
         effective_date = CurrencyStat.objects.all().last().effective_date.strftime('%Y-%m-%d')
         effective_date = datetime.datetime.strptime(effective_date, "%Y-%m-%d").date()
 
@@ -154,6 +154,49 @@ class AboutView(DetailView):
             effective_date = effective_date + datetime.timedelta(days=1)
 
         return stock_data
+
+    def get_data_from_net(self, date_from, date_to):
+        stock_data = {}
+        currency_data = {}
+
+        url_tables = f"https://api.nbp.pl/api/exchangerates/tables/a/{date_from}/{date_to}?format=json"
+
+        try:
+            stock_tables = requests.get(url_tables).json()
+        except:
+            return {}
+        else:
+            for table in stock_tables:
+                codes = table['rates']
+
+                for rate_code in codes:
+                    code = rate_code['code']
+
+                    url_rates = f"https://api.nbp.pl/api/exchangerates/rates/a/{code}/{date_from}/{date_to}?format=json"
+
+                    try:
+                        rates = requests.get(url_rates).json()['rates']
+                    except:
+                        stock_data[code] = {}
+                    else:
+                        for rate in rates:
+                            currency_data[rate['effectiveDate']] = rate['mid']
+
+                    stock_data[code] = currency_data
+
+        return stock_data
+
+    def set_data_from_net(self, date_from, date_to):
+        stock = {}
+
+        date_from = date_from.strftime('%Y-%m-%d')
+        date_from = datetime.datetime.strptime(date_from, "%Y-%m-%d").date()
+        date_to = date_to.strftime('%Y-%m-%d')
+        date_to = datetime.datetime.strptime(date_to, "%Y-%m-%d").date()
+
+        stock = self.get_data_from_net(date_from, date_to)
+
+        return stock
 
     def set_data(self, date_from, date_to):
         stock = {}

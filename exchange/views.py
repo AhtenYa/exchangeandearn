@@ -17,8 +17,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 
 from stock.models import Currency
-from .models import Account, Order, Transfer
-from .forms import LoginForm, RegisterForm, PasswordForm
+from .models import Account, Transfer
+from .forms import LoginForm, RegisterForm, PasswordForm, AccountForm, TransferForm
 
 
 class IndexView(DetailView):
@@ -38,7 +38,7 @@ class UserIndexView(DetailView):
 
         account = Account.objects.get(owner=request.user)
 
-        account_info['status'] = account.status
+        #account_info['status'] = account.status
         account_info['currency'] = account.currency
         account_info['balance'] = account.balance
 
@@ -104,8 +104,6 @@ class UserRegisterView(CreateView):
         user_perms = Permission.objects.filter(content_type=user_content_type)
         account_content_type = ContentType.objects.get_for_model(Account)
         account_perms = Permission.objects.filter(content_type=account_content_type)
-        order_content_type = ContentType.objects.get_for_model(Order)
-        order_perms = Permission.objects.filter(content_type=order_content_type)
         transfer_content_type = ContentType.objects.get_for_model(Transfer)
         transfer_perms = Permission.objects.filter(content_type=transfer_content_type)
 
@@ -114,8 +112,6 @@ class UserRegisterView(CreateView):
         for perm in user_perms:
             user.user_permissions.add(perm)
         for perm in account_perms:
-            user.user_permissions.add(perm)
-        for perm in order_perms:
             user.user_permissions.add(perm)
         for perm in transfer_perms:
             user.user_permissions.add(perm)
@@ -127,6 +123,34 @@ class UserRegisterView(CreateView):
         if not self.success_url:
             raise ImproperlyConfigured("No URL to redirect to. Provide a success_url.")
         return str(self.success_url)
+
+
+@method_decorator(login_required, name='dispatch')
+class TransferCreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'exchange.add_transfer'
+    template_name = 'exchange/transfer_create.html'
+    model = Transfer
+    form_class = TransferForm
+    success_url = reverse_lazy('exchange:user_index')
+
+
+@method_decorator(login_required, name='dispatch')
+class AccountCreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'exchange.add_account'
+    template_name = 'exchange/account_create.html'
+    model = Account
+    form_class = AccountForm
+    success_url = reverse_lazy('exchange:user_index')
+
+    def form_valid(self, form):
+        owner_obj = self.request.user
+        currency_id = self.request.POST['currency']
+        account_currency = Currency.objects.get(id=currency_id)
+
+        Account.objects.create(owner=self.request.user, status='AC',
+        currency=account_currency, balance=0.00, base_account=False)
+
+        return super().form_valid(form)
 
 
 @login_required
