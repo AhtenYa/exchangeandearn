@@ -13,7 +13,7 @@ class AccountAdmin(admin.ModelAdmin):
     ]
 
     list_display = ('owner', 'status', 'currency', 'balance', 'base_account')
-    list_filter = ['currency']
+    list_filter = ['owner', 'status', 'currency', 'base_account']
     search_fields = ['owner']
 
 
@@ -28,7 +28,7 @@ class TransferAdmin(admin.ModelAdmin):
     ]
 
     list_display = ('owner', 'transfer_date', 'valuation_date', 'amount', 'account_from', 'account_to')
-    list_filter = ['transfer_date']
+    list_filter = ['owner', 'transfer_date']
     search_fields = ['owner']
 
 admin.site.register(Account, AccountAdmin)

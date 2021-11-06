@@ -19,11 +19,14 @@ class Account(models.Model):
     balance = models.FloatField(max_length=32, default=0.00000000)
     base_account = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.currency.currency_code
+
 
 class Transfer(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    transfer_date = models.DateField('transfer date')
-    valuation_date = models.DateField('valuation date')
+    transfer_date = models.DateTimeField(auto_now_add=True)
+    valuation_date = models.DateTimeField('valuation date')
     amount = models.FloatField(max_length=32, default=0.00000000)
     account_from = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='account_from')
     account_to = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='account_to')

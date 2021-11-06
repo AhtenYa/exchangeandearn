@@ -20,6 +20,8 @@ from stock.models import Currency
 from .models import Account, Transfer
 from .forms import LoginForm, RegisterForm, PasswordForm, AccountForm, TransferForm
 
+import requests, math
+
 
 class IndexView(DetailView):
     template_name = 'exchange/index.html'
@@ -124,12 +126,69 @@ class UserRegisterView(CreateView):
 
 
 @method_decorator(login_required, name='dispatch')
-class TransferCreateView(PermissionRequiredMixin, CreateView):
+class TransferCreateView(PermissionRequiredMixin, FormView):
     permission_required = 'exchange.add_transfer'
     template_name = 'exchange/transfer_create.html'
     model = Transfer
     form_class = TransferForm
     success_url = reverse_lazy('exchange:user_index')
+
+    def get_initial(self):
+        init = super(TransferCreateView, self).get_initial()
+        init.update({'user':self.request.user})
+        return init
+
+    def form_valid(self, form):
+        af_id = self.request.POST['account_from']
+        at_id = self.request.POST['account_to']
+        amount = float(self.request.POST['amount'])
+        owner_obj = self.request.user
+
+        account_from = Account.objects.get(id=af_id)
+        account_to = Account.objects.get(id=at_id)
+
+        curcode_from = account_from.currency.currency_code
+        curcode_to = account_to.currency.currency_code
+
+        amount_from = amount
+
+        if curcode_from == 'PLN':
+            url_to = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_to}/last?format=JSON"
+            data_to = requests.get(url_to).json()['rates'][0]
+            rate_to = data_to['bid']
+            val_date = data_to['effectiveDate']
+            amount_to = float(float(amount_from) / float(rate_to))
+        elif curcode_to == 'PLN':
+            url_from = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_from}/last?format=JSON"
+            data_from = requests.get(url_from).json()['rates'][0]
+            rate_from = data_from['ask']
+            val_date = data_from['effectiveDate']
+            amount_to = float(float(amount_from) * float(rate_from))
+        else:
+            url_to = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_to}/last?format=JSON"
+            url_from = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_from}/last?format=JSON"
+
+            data_to = requests.get(url_to).json()['rates'][0]
+            data_from = requests.get(url_from).json()['rates'][0]
+
+            rate_to = data_to['bid']
+            rate_from = data_from['ask']
+
+            val_date = data_to['effectiveDate']
+            amount_to = float(float(amount_from) * float(rate_from) / float(rate_to))
+
+        amount_from = math.floor(amount_from * 100)/100.0
+        amount_to = math.floor(amount_to * 100)/100.0
+
+        account_from.balance = account_from.balance - amount_from
+        account_from.save()
+        account_to.balance = account_to.balance + amount_to
+        account_to.save()
+
+        Transfer.objects.create(owner=owner_obj, valuation_date=val_date,
+        amount=amount, account_from=account_from, account_to=account_to)
+
+        return super().form_valid(form)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -140,18 +199,17 @@ class AccountCreateView(PermissionRequiredMixin, FormView):
     form_class = AccountForm
     success_url = reverse_lazy('exchange:user_index')
 
+    def get_initial(self):
+        init = super(AccountCreateView, self).get_initial()
+        init.update({'user':self.request.user})
+        return init
+
     def form_valid(self, form):
-        owner_obj = self.request.user
         currency_id = self.request.POST['currency']
         account_currency = Currency.objects.get(id=currency_id)
+        owner_obj = self.request.user
 
-        try:
-            Account.objects.get(owner=owner_obj, currency=account_currency)
-        except Account.DoesNotExist:
-            Account.objects.create(owner=owner_obj, status='AC',
-                currency=account_currency, balance=0.00, base_account=False)
-        else:
-            return super().form_invalid(form)
+        Account.objects.create(owner=owner_obj, currency=account_currency)
 
         return super().form_valid(form)
 

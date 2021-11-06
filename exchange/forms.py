@@ -11,28 +11,46 @@ from stock.models import Currency
 class TransferForm(forms.ModelForm):
     class Meta:
         model = Transfer
-        fields = ['amount', 'transfer_date']
-        labels = {'amount' : '', 'transfer_date' : ''}
-        widgets = {'amount' : forms.NumberInput(attrs={'name': 'transfer_amount', 'placeholder': 'Enter Amount'}),
-                'transfer_date': forms.DateInput(attrs={'name': 'transfer_date', 'type': 'date', 'class': 'form-control datepicker'})}
+        fields = ['account_from', 'account_to', 'amount']
+        #labels = {'amount' : '', 'transfer_date' : ''}
+        widgets = {'account_from': forms.Select(attrs={'name' : 'account_from'}), 'account_to': forms.Select(attrs={'name' : 'account_to'}),
+         'amount' : forms.NumberInput(attrs={'name': 'transfer_amount', 'placeholder': 'Enter Amount'})}
+
+    def clean(self):
+        cleaned_data = super().clean()
+        account_from = cleaned_data.get("account_from")
+        account_to = cleaned_data.get("account_to")
+        amount = cleaned_data.get("amount")
+
+        user = self.initial['user']
+
+        balance = account_from.balance
+
+        if account_from == account_to:
+            raise ValidationError("You must choose different accounts.")
+        elif amount <= 0.0:
+            raise ValidationError("You must choose bigger amount.")
+        elif amount > balance:
+            raise ValidationError("You must choose lower amount.")
+        else:
+            return cleaned_data
 
 
 class AccountForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ['currency']
-        #labels = {'currency': ''}
         widgets = {'currency' : forms.Select(attrs={'name' : 'currency'})}
 
     def clean(self):
         cleaned_data = super().clean()
         account_currency = cleaned_data.get("currency")
-        user = self.request.user
+        user = self.initial['user']
 
         try:
             account = Account.objects.get(owner=user, currency=account_currency)
         except:
-            pass
+            return cleaned_data
         else:
             raise ValidationError("You already have that account.")
 
