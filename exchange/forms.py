@@ -27,9 +27,10 @@ class AccountForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         account_currency = cleaned_data.get("currency")
+        user = self.request.user
 
         try:
-            account = Account.objects.get(currency=account_currency)
+            account = Account.objects.get(owner=user, currency=account_currency)
         except:
             pass
         else:

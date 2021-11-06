@@ -1,13 +1,21 @@
 {% extends "base.html" %}
 
-{% load stock_extras %}
-
 {% block content %}
-<div class="mx-auto py-5 col-md-3">
+<div class="mx-auto py-5 col-md-4">
   <div class="modal-content">
     <div class="modal-body">
-        <h4>{{ account_info|from_dict:"balance" }} {{ account_info|from_dict:"currency" }}</h4>
+      <h4>{{ base_account.balance }} {{ base_account.currency }}</h4>
     </div>
   </div>
 </div>
+
+{% for account in other_accounts %}
+<div class="mx-auto py-2 col-md-4">
+  <div class="modal-content">
+    <div class="modal-body">
+      <h4>{{ account.balance }} {{ account.currency }}</h4>
+    </div>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}

@@ -33,16 +33,14 @@ class UserIndexView(DetailView):
     template_name = 'exchange/user_index.html'
 
     def get(self, request):
+        user = request.user
         context = {}
-        account_info = {}
 
-        account = Account.objects.get(owner=request.user)
+        base_account = Account.objects.get(owner=user, base_account=True)
+        other_accounts = Account.objects.filter(owner=user, base_account=False)
 
-        #account_info['status'] = account.status
-        account_info['currency'] = account.currency
-        account_info['balance'] = account.balance
-
-        context['account_info'] = account_info
+        context['base_account'] = base_account
+        context['other_accounts'] = other_accounts
 
         return render(request, 'exchange/user_index.html', context)
 
@@ -135,7 +133,7 @@ class TransferCreateView(PermissionRequiredMixin, CreateView):
 
 
 @method_decorator(login_required, name='dispatch')
-class AccountCreateView(PermissionRequiredMixin, CreateView):
+class AccountCreateView(PermissionRequiredMixin, FormView):
     permission_required = 'exchange.add_account'
     template_name = 'exchange/account_create.html'
     model = Account
@@ -147,8 +145,13 @@ class AccountCreateView(PermissionRequiredMixin, CreateView):
         currency_id = self.request.POST['currency']
         account_currency = Currency.objects.get(id=currency_id)
 
-        Account.objects.create(owner=self.request.user, status='AC',
-        currency=account_currency, balance=0.00, base_account=False)
+        try:
+            Account.objects.get(owner=owner_obj, currency=account_currency)
+        except Account.DoesNotExist:
+            Account.objects.create(owner=owner_obj, status='AC',
+                currency=account_currency, balance=0.00, base_account=False)
+        else:
+            return super().form_invalid(form)
 
         return super().form_valid(form)
 

@@ -14,7 +14,7 @@ class Account(models.Model):
 
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=2, choices=AccountStatus.choices)
+    status = models.CharField(max_length=2, choices=AccountStatus.choices, default=AccountStatus.ACTIVE)
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
     balance = models.FloatField(max_length=32, default=0.00000000)
     base_account = models.BooleanField(default=False)
