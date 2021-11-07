@@ -200,6 +200,25 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
 
 
 @method_decorator(login_required, name='dispatch')
+class TransfersListView(PermissionRequiredMixin, ListView):
+    permission_required = 'exchange.view_transfer'
+    template_name = 'exchange/transfers_list_view.html'
+    model = Transfer
+
+    def get_context_data(self):
+        transfers = Transfer.objects.filter(owner=self.request.user)
+        transfersDesc = transfers.order_by('-transfer_date')
+
+        paginator = Paginator(transfersDesc, 5)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {'page_obj': page_obj}
+
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
 class AccountCreateView(PermissionRequiredMixin, FormView):
     permission_required = 'exchange.add_account'
     template_name = 'exchange/account_create.html'
