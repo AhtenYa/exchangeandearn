@@ -155,18 +155,10 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
                 date = timezone.make_aware(date, timezone.get_current_timezone())
         else:
             rate = float(1)
-            date = datetime.date.today()
+            date = datetime.datetime.today()
+            date = timezone.make_aware(date, timezone.get_current_timezone())
 
         return rate, date
-
-    def set_data(self, amount_from, code_from, code_to):
-        rate_to, date_to = self.get_data(code_to, 'ask')
-        rate_from, date_from = self.get_data(code_from, 'bid')
-
-        amount_to = float(float(amount_from) * float(rate_from) / float(rate_to))
-        val_date = date_to
-
-        return amount_to, val_date
 
     def get_initial(self):
         init = super(TransferCreateView, self).get_initial()
@@ -174,10 +166,12 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         return init
 
     def form_valid(self, form):
+        owner_obj = self.request.user
         af_id = self.request.POST['account_from']
         at_id = self.request.POST['account_to']
-        amount = float(self.request.POST['amount'])
-        owner_obj = self.request.user
+
+        amount_from = float(self.request.POST['amount_from'])
+        amount_from = math.floor(amount_from * 100)/100.0
 
         account_from = Account.objects.get(id=af_id)
         account_to = Account.objects.get(id=at_id)
@@ -185,11 +179,10 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         curcode_from = account_from.currency.currency_code
         curcode_to = account_to.currency.currency_code
 
-        amount_from = amount
-        amount_from = math.floor(amount_from * 100)/100.0
+        rate_from, date_from = self.get_data(curcode_from, 'bid')
+        rate_to, date_to = self.get_data(curcode_to, 'ask')
 
-        amount_to, val_date = self.set_data(amount_from, curcode_from, curcode_to)
-
+        amount_to = float(float(amount_from) * float(rate_from) / float(rate_to))
         amount_to = math.floor(amount_to * 100)/100.0
 
         account_from.balance = account_from.balance - amount_from
@@ -199,8 +192,9 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         account_to.balance = math.floor(account_to.balance * 100)/100.0
         account_to.save()
 
-        Transfer.objects.create(owner=owner_obj, valuation_date=val_date,
-        amount=amount_from, account_from=account_from, account_to=account_to)
+        Transfer.objects.create(owner=owner_obj, valuation_date_from=date_from,
+        valuation_date_to=date_to, exchange_rate_from=rate_from, exchange_rate_to=rate_to,
+        amount_from=amount_from, amount_to=amount_to, account_from=account_from, account_to=account_to)
 
         return super().form_valid(form)
 

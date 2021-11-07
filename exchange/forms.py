@@ -11,10 +11,10 @@ from stock.models import Currency
 class TransferForm(forms.ModelForm):
     class Meta:
         model = Transfer
-        fields = ['account_from', 'account_to', 'amount']
+        fields = ['account_from', 'account_to', 'amount_from']
         #labels = {'amount' : '', 'transfer_date' : ''}
         widgets = {'account_from': forms.Select(attrs={'name' : 'account_from'}), 'account_to': forms.Select(attrs={'name' : 'account_to'}),
-         'amount' : forms.NumberInput(attrs={'name': 'transfer_amount', 'placeholder': 'Enter Amount'})}
+         'amount_from' : forms.NumberInput(attrs={'name': 'transfer_amount', 'placeholder': 'Enter Amount'})}
 
     def __init__(self, *args, **kwargs):
         super(TransferForm, self).__init__(*args, **kwargs)
@@ -25,7 +25,7 @@ class TransferForm(forms.ModelForm):
         cleaned_data = super().clean()
         account_from = cleaned_data.get("account_from")
         account_to = cleaned_data.get("account_to")
-        amount = cleaned_data.get("amount")
+        amount_from = cleaned_data.get("amount_from")
 
         user = self.initial['user']
 
@@ -33,9 +33,9 @@ class TransferForm(forms.ModelForm):
 
         if account_from == account_to:
             raise ValidationError("You must choose different accounts.")
-        elif amount <= 0.0:
+        elif amount_from <= 0.0:
             raise ValidationError("You must choose bigger amount.")
-        elif amount > balance:
+        elif amount_from > balance:
             raise ValidationError("You must choose lower amount.")
         else:
             return cleaned_data

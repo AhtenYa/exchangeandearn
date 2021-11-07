@@ -26,7 +26,11 @@ class Account(models.Model):
 class Transfer(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     transfer_date = models.DateTimeField(auto_now_add=True)
-    valuation_date = models.DateTimeField('valuation date')
-    amount = models.FloatField(max_length=32, default=0.00000000)
+    valuation_date_from = models.DateTimeField('valuation date from')
+    valuation_date_to = models.DateTimeField('valuation date to')
+    exchange_rate_from = models.FloatField(max_length=16, default=0.00000000)
+    exchange_rate_to = models.FloatField(max_length=16, default=0.00000000)
+    amount_from = models.FloatField(max_length=32, default=0.00000000)
+    amount_to = models.FloatField(max_length=32, default=0.00000000)
     account_from = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='account_from')
     account_to = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='account_to')
