@@ -155,13 +155,13 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         if curcode_from == 'PLN':
             url_to = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_to}/last?format=JSON"
             data_to = requests.get(url_to).json()['rates'][0]
-            rate_to = data_to['bid']
+            rate_to = data_to['ask']
             val_date = data_to['effectiveDate']
             amount_to = float(float(amount_from) / float(rate_to))
         elif curcode_to == 'PLN':
             url_from = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_from}/last?format=JSON"
             data_from = requests.get(url_from).json()['rates'][0]
-            rate_from = data_from['ask']
+            rate_from = data_from['bid']
             val_date = data_from['effectiveDate']
             amount_to = float(float(amount_from) * float(rate_from))
         else:
@@ -171,8 +171,8 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
             data_to = requests.get(url_to).json()['rates'][0]
             data_from = requests.get(url_from).json()['rates'][0]
 
-            rate_to = data_to['bid']
-            rate_from = data_from['ask']
+            rate_to = data_to['ask']
+            rate_from = data_from['bid']
 
             val_date = data_to['effectiveDate']
             amount_to = float(float(amount_from) * float(rate_from) / float(rate_to))
@@ -181,8 +181,10 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         amount_to = math.floor(amount_to * 100)/100.0
 
         account_from.balance = account_from.balance - amount_from
+        account_from.balance = math.floor(account_from.balance * 100)/100.0
         account_from.save()
         account_to.balance = account_to.balance + amount_to
+        account_to.balance = math.floor(account_to.balance * 100)/100.0
         account_to.save()
 
         Transfer.objects.create(owner=owner_obj, valuation_date=val_date,

@@ -20,7 +20,6 @@ class AccountAdmin(admin.ModelAdmin):
 class TransferAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {'fields': ['owner']}),
-        ('Date information', {'fields': ['transfer_date']}),
         ('Date information', {'fields': ['valuation_date']}),
         (None, {'fields': ['amount']}),
         (None, {'fields': ['account_from']}),

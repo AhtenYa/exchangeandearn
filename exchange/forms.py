@@ -26,7 +26,9 @@ class TransferForm(forms.ModelForm):
 
         balance = account_from.balance
 
-        if account_from == account_to:
+        if account_from.owner != user or account_to.owner != user:
+            raise ValidationError("You must choose different accounts.")
+        elif account_from == account_to:
             raise ValidationError("You must choose different accounts.")
         elif amount <= 0.0:
             raise ValidationError("You must choose bigger amount.")

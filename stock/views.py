@@ -30,7 +30,10 @@ class IndexView(DetailView):
                 date = date.strftime('%Y-%m-%d')
                 date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
-                rate = data.value_ask
+                if type == 'ask':
+                    rate = data.value_ask
+                elif type == 'bid':
+                    rate = data.value_bid
             else:
                 date = data['effectiveDate']
 
@@ -38,7 +41,10 @@ class IndexView(DetailView):
                 date = timezone.make_aware(date, timezone.get_current_timezone())
                 date = date.date()
 
-                rate = float(data[type])
+                if type == 'ask':
+                    rate = float(data['bid'])
+                elif type == 'bid':
+                    rate = float(data['ask'])
         else:
             date = datetime.date.today()
             rate = float(1)
