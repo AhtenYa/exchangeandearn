@@ -20,7 +20,7 @@ class Account(models.Model):
     base_account = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"({self.owner.username}) {self.currency.currency_code}"
+        return self.currency.currency_code
 
 
 class Transfer(models.Model):

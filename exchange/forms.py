@@ -16,6 +16,11 @@ class TransferForm(forms.ModelForm):
         widgets = {'account_from': forms.Select(attrs={'name' : 'account_from'}), 'account_to': forms.Select(attrs={'name' : 'account_to'}),
          'amount' : forms.NumberInput(attrs={'name': 'transfer_amount', 'placeholder': 'Enter Amount'})}
 
+    def __init__(self, *args, **kwargs):
+        super(TransferForm, self).__init__(*args, **kwargs)
+        self.fields['account_from'].queryset = Account.objects.filter(owner=self.initial['user'])
+        self.fields['account_to'].queryset = Account.objects.filter(owner=self.initial['user'])
+
     def clean(self):
         cleaned_data = super().clean()
         account_from = cleaned_data.get("account_from")
@@ -26,9 +31,7 @@ class TransferForm(forms.ModelForm):
 
         balance = account_from.balance
 
-        if account_from.owner != user or account_to.owner != user:
-            raise ValidationError("You must choose different accounts.")
-        elif account_from == account_to:
+        if account_from == account_to:
             raise ValidationError("You must choose different accounts.")
         elif amount <= 0.0:
             raise ValidationError("You must choose bigger amount.")
