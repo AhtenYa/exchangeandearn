@@ -8,6 +8,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -16,11 +17,11 @@ from django.contrib.contenttypes.models import ContentType
 
 from django.contrib.auth.models import User
 
-from stock.models import Currency
+from stock.models import Currency, CurrencyStat
 from .models import Account, Transfer
 from .forms import LoginForm, RegisterForm, PasswordForm, AccountForm, TransferForm
 
-import requests, math
+import datetime, requests, math
 
 
 class IndexView(DetailView):
@@ -133,6 +134,40 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
     form_class = TransferForm
     success_url = reverse_lazy('exchange:user_index')
 
+    def get_data(self, code, type):
+        if code != 'PLN':
+            url = f"https://api.nbp.pl/api/exchangerates/rates/c/{code}/last?format=JSON"
+            try:
+                data = requests.get(url).json()['rates'][0]
+            except requests.exceptions.RequestException as e:
+                curr = Currency.objects.get(currency_code=code)
+                data = CurrencyStat.objects.filter(currency=curr).last()
+                date = data.effective_date
+
+                if type == 'ask':
+                    rate = data.value_ask
+                elif type == 'bid':
+                    rate = data.value_bid
+            else:
+                rate = data[type]
+                date = data['effectiveDate']
+                date = datetime.datetime.strptime(date, "%Y-%m-%d")
+                date = timezone.make_aware(date, timezone.get_current_timezone())
+        else:
+            rate = float(1)
+            date = datetime.date.today()
+
+        return rate, date
+
+    def set_data(self, amount_from, code_from, code_to):
+        rate_to, date_to = self.get_data(code_to, 'ask')
+        rate_from, date_from = self.get_data(code_from, 'bid')
+
+        amount_to = float(float(amount_from) * float(rate_from) / float(rate_to))
+        val_date = date_to
+
+        return amount_to, val_date
+
     def get_initial(self):
         init = super(TransferCreateView, self).get_initial()
         init.update({'user':self.request.user})
@@ -151,33 +186,10 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         curcode_to = account_to.currency.currency_code
 
         amount_from = amount
-
-        if curcode_from == 'PLN':
-            url_to = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_to}/last?format=JSON"
-            data_to = requests.get(url_to).json()['rates'][0]
-            rate_to = data_to['ask']
-            val_date = data_to['effectiveDate']
-            amount_to = float(float(amount_from) / float(rate_to))
-        elif curcode_to == 'PLN':
-            url_from = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_from}/last?format=JSON"
-            data_from = requests.get(url_from).json()['rates'][0]
-            rate_from = data_from['bid']
-            val_date = data_from['effectiveDate']
-            amount_to = float(float(amount_from) * float(rate_from))
-        else:
-            url_to = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_to}/last?format=JSON"
-            url_from = f"https://api.nbp.pl/api/exchangerates/rates/c/{curcode_from}/last?format=JSON"
-
-            data_to = requests.get(url_to).json()['rates'][0]
-            data_from = requests.get(url_from).json()['rates'][0]
-
-            rate_to = data_to['ask']
-            rate_from = data_from['bid']
-
-            val_date = data_to['effectiveDate']
-            amount_to = float(float(amount_from) * float(rate_from) / float(rate_to))
-
         amount_from = math.floor(amount_from * 100)/100.0
+
+        amount_to, val_date = self.set_data(amount_from, curcode_from, curcode_to)
+
         amount_to = math.floor(amount_to * 100)/100.0
 
         account_from.balance = account_from.balance - amount_from
@@ -188,7 +200,7 @@ class TransferCreateView(PermissionRequiredMixin, FormView):
         account_to.save()
 
         Transfer.objects.create(owner=owner_obj, valuation_date=val_date,
-        amount=amount, account_from=account_from, account_to=account_to)
+        amount=amount_from, account_from=account_from, account_to=account_to)
 
         return super().form_valid(form)
 
